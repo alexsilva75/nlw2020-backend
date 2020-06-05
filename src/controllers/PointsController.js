@@ -107,7 +107,7 @@ class PointsController {
 
         const serializedPoint = {
             ...point,
-            image_url: `http://192.168.0.103:3333/uploads/${point.image}`
+            image_url: `https://nlw2020-backend.herokuapp.com/uploads/${point.image}`
         }
 
         console.log(point)
