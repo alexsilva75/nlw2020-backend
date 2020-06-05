@@ -1,7 +1,8 @@
 const express = require('express')
-const {routes} = require('./routes')
+const { routes } = require('./routes')
 const path = require('path')
 const cors = require('cors')
+const { errors } = require('celebrate')
 
 const app = express()
 
@@ -9,7 +10,7 @@ app.use(cors())
 app.use(express.json())
 app.use(routes)
 
-app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')) )
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')))
 
 
 
@@ -51,6 +52,8 @@ app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')) )
 //     return resp.json(user)
 // })
 
-app.listen(3333, ()=>{
-    console.log(`Server running at port 3333`)
+app.use(errors())
+
+app.listen(3333, () => {
+    console.log(`Server working at 3333`)
 })
