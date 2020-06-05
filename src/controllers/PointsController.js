@@ -2,20 +2,35 @@ const knex = require('../database/connection')
 
 class PointsController {
 
-    async index(request, response){
+    async index(request, response) {
+        const points = await knex('points').select('*')
 
-        const {city, uf, items} = request.query
-
-        const itemsArray = items.split(',').map( item_id => item_id.trim())
-
-        const points = await knex('points')
-            .join('points_items', 'points.id', '=', 'points_items.point_id')
-            .whereIn('points_items.item_id', itemsArray)
-            .where('city', city)
-            .where('uf', uf)
-            .distinct()
-            .select('points.*')
         return response.json(points)
+    }
+
+    async search(request, response) {
+
+        const { city, uf, items } = request.query
+
+        console.log(`City: ${city}`)
+        console.log(`UF: ${typeof(uf)}`)
+        console.log(`Items: ${typeof(items)}`)
+
+        if (city && uf && items) {
+            const itemsArray = items.map(item_id => item_id.trim())
+
+
+            const points = await knex('points')
+                .join('points_items', 'points.id', '=', 'points_items.point_id')
+                .whereIn('points_items.item_id', itemsArray)
+                .where('city', city)
+                .where('uf', uf)
+                .distinct()
+                .select('points.*')
+            return response.json(points)
+        }else{
+            return response.json({message: 'The search did not return any result.'})
+        }
     }
 
     async create(request, response) {
@@ -60,23 +75,23 @@ class PointsController {
         )
     }
 
-    async show(request, response){
+    async show(request, response) {
         const id = request.params.id
 
         const point = await knex('points').where('id', id).first()
 
-        if(!point){
-            return response.status(400).json({message: 'Point not found.'})
+        if (!point) {
+            return response.status(400).json({ message: 'Point not found.' })
         }
 
         const items = await knex('items')
             .join('points_items', 'items.id', '=', 'points_items.item_id')
-            .where( 'points_items.point_id', id)
+            .where('points_items.point_id', id)
             .select('items.title')
 
 
         console.log(point)
-        return response.json({point, items})
+        return response.json({ point, items })
 
     }
 }
