@@ -2,22 +2,23 @@ const knex = require('../database/connection')
 
 class PointsController {
 
+
     async index(request, response) {
-        const points = await knex('points').select('*')
-
-        return response.json(points)
-    }
-
-    async search(request, response) {
 
         const { city, uf, items } = request.query
 
         console.log(`City: ${city}`)
-        console.log(`UF: ${typeof(uf)}`)
-        console.log(`Items: ${typeof(items)}`)
+        console.log(`UF: ${typeof (uf)}`)
+        console.log(`Items: ${typeof (items)}`)
 
+        let itemsArray = null
         if (city && uf && items) {
-            const itemsArray = items.map(item_id => item_id.trim())
+            if (typeof (items) === 'string') {
+                itemsArray = items.split(',').map(item_id => item_id.trim())
+
+            } else {
+                itemsArray = items.map(item_id => item_id)
+            }
 
 
             const points = await knex('points')
@@ -27,9 +28,19 @@ class PointsController {
                 .where('uf', uf)
                 .distinct()
                 .select('points.*')
-            return response.json(points)
-        }else{
-            return response.json({message: 'The search did not return any result.'})
+
+            const serializedPoints = points.map(point => {
+                return {
+                    ...point,
+                    image_url: `http://192.168.0.103:3333/uploads/${point.image}`
+                }
+            }
+
+            )
+
+            return response.json(serializedPoints)
+        } else {
+            return response.json({ message: 'The search did not return any result.' })
         }
     }
 
@@ -48,7 +59,7 @@ class PointsController {
         const trx = await knex.transaction()
 
         const point = {
-            image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60',
+            image: request.file.filename,//'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60',
             name,
             email,
             whatsapp,
@@ -62,8 +73,13 @@ class PointsController {
 
         const point_id = insertedIds[0]
 
-        const pointItems = items.map(item_id => ({ item_id, point_id }))
+        let pointItems = null
 
+        if (typeof (items) === 'string') {
+            pointItems = items.split(',').map(item_id => ({ item_id: item_id.trim(), point_id }))
+        } else {
+            pointItems = items.map(item_id => ({ item_id, point_id }))
+        }
         await trx('points_items').insert(pointItems)
 
         await trx.commit()
@@ -89,9 +105,13 @@ class PointsController {
             .where('points_items.point_id', id)
             .select('items.title')
 
+        const serializedPoint = {
+            ...point,
+            image_url: `http://192.168.0.103:3333/uploads/${point.image}`
+        }
 
         console.log(point)
-        return response.json({ point, items })
+        return response.json({ point: serializedPoint, items })
 
     }
 }
